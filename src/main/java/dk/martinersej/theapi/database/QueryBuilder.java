@@ -2,7 +2,9 @@ package dk.martinersej.theapi.database;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.function.Consumer;
 
 public class QueryBuilder {
 
@@ -176,9 +178,14 @@ public class QueryBuilder {
         return query;
     }
 
-    @Override
-    public String toString() {
-        return query;
+    public void executeQuery(Connection connection, Consumer<ResultSet> consumer) throws SQLException {
+        PreparedStatement statement = connection.prepareStatement(query);
+        consumer.accept(statement.executeQuery());
+    }
+
+    public void executeUpdate(Connection connection) throws SQLException {
+        PreparedStatement statement = connection.prepareStatement(query);
+        statement.executeUpdate();
     }
 
     @Override
@@ -191,51 +198,62 @@ public class QueryBuilder {
             return false;
         }
 
-        return query.equals(obj.toString());
+        QueryBuilder queryBuilder = (QueryBuilder) obj;
+        return query.equals(queryBuilder.build());
     }
 
     public static final class QueryTableBuilder {
-
-        private String query;
+        private StringBuilder query;
+        private boolean firstColumnAdded = false;
 
         public QueryTableBuilder(String table) {
-            query = "CREATE TABLE IF NOT EXISTS " + table;
+            this.query = new StringBuilder("CREATE TABLE IF NOT EXISTS " + table + " (");
         }
 
         public static QueryTableBuilder createTable(String table) {
             return new QueryTableBuilder(table);
         }
 
+        // Adding column without constraints
         public QueryTableBuilder values(String column, String type) {
-            query += " (" + column + " " + type + ")";
+            if (firstColumnAdded) {
+                this.query.append(", ");
+            }
+            this.query.append(column).append(" ").append(type);
+            firstColumnAdded = true;
             return this;
         }
 
+        // Adding column with constraints
         public QueryTableBuilder values(String column, String type, Constraint... constraints) {
-            query += " (" + column + " " + type;
-            for (Constraint constraint : constraints) {
-                query += " " + constraint;
+            if (firstColumnAdded) {
+                this.query.append(", ");
             }
-            query += ")";
+            this.query.append(column).append(" ").append(type);
+            for (Constraint constraint : constraints) {
+                this.query.append(" ").append(constraint);
+            }
+            firstColumnAdded = true;
             return this;
         }
 
         public QueryTableBuilder values(String column, String type, String... constraints) {
-            query += " (" + column + " " + type;
-            for (String constraint : constraints) {
-                query = String.format("%s%s", query, " " + constraint);
+            if (firstColumnAdded) {
+                this.query.append(", ");
             }
-            query += ")";
+            this.query.append(column).append(" ").append(type);
+            for (String constraint : constraints) {
+                this.query.append(" ").append(constraint);
+            }
+            firstColumnAdded = true;
             return this;
         }
 
-        public QueryTableBuilder build() {
-            return this;
-        }
-
-        @Override
-        public String toString() {
-            return query;
+        // Finalize the query by closing the parenthesis
+        public String build() {
+            this.query.append(");");
+            return this.query.toString();
         }
     }
+
 }
