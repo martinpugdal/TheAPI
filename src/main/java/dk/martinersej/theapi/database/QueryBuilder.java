@@ -214,7 +214,7 @@ public class QueryBuilder {
             return new QueryTableBuilder(table);
         }
 
-        // Adding column without constraints
+        // Adding a column without constraints
         public QueryTableBuilder values(String column, String type) {
             if (firstColumnAdded) {
                 this.query.append(", ");
@@ -224,7 +224,7 @@ public class QueryBuilder {
             return this;
         }
 
-        // Adding column with constraints
+        // Adding a column with constraints
         public QueryTableBuilder values(String column, String type, Constraint... constraints) {
             if (firstColumnAdded) {
                 this.query.append(", ");
@@ -237,23 +237,10 @@ public class QueryBuilder {
             return this;
         }
 
-        public QueryTableBuilder values(String column, String type, String... constraints) {
-            if (firstColumnAdded) {
-                this.query.append(", ");
-            }
-            this.query.append(column).append(" ").append(type);
-            for (String constraint : constraints) {
-                this.query.append(" ").append(constraint);
-            }
-            firstColumnAdded = true;
-            return this;
-        }
-
         // Finalize the query by closing the parenthesis
         public String build() {
             this.query.append(");");
             return this.query.toString();
         }
     }
-
 }

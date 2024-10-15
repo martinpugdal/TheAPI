@@ -141,7 +141,12 @@ public abstract class Command extends org.bukkit.command.Command implements Plug
             commandSender.sendMessage("§cOnly players can execute this command!");
             return false;
         }
-        boolean successed = this.run(commandSender, label, strings);
+        boolean successed = false;
+        try {
+            successed = this.run(commandSender, label, strings);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         if (!successed) {
             commandSender.sendMessage(this.getUsage());
         }
